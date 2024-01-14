@@ -1,27 +1,3 @@
 mainmenu "CC1352 Demo Application" 
 
-# config BEAGLEPLAY_GREYBUS_MAX_NODES
-#   int "Maximum number of cports supported by AP"
-#   default 1
-#
-# config BEAGLEPLAY_GREYBUS_MAX_INTERFACES
-#   int "Maximum number of interfaces supported by SVC"
-#   default 1
-#
-# config BEAGLEPLAY_HDLC_MAX_BLOCK_SIZE
-#   int "Maximum hdlc block size supported"
-#   default 140
-#
-# config BEAGLEPLAY_GREYBUS_MESSAGES_HEAP_MEM_POOL_SIZE
-# 	int "Heap for Greybus messages"
-# 	default 2048
-#
-# config BEAGLEPLAY_GREYBUS_MAX_CPORTS
-# 	int "Maximum number of Cports supported by SVC"
-# 	default 32
-#
-# module = BEAGLEPLAY_GREYBUS
-# module-str = beagleplay_greybus
-# source "subsys/logging/Kconfig.template.log_config"
-#
 source "Kconfig.zephyr"
