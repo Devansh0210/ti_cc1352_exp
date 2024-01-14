@@ -10,9 +10,11 @@
  */
 
 #include "ti_radio_config.h"
-#include DeviceFamily_constructPath(rf_patches/rf_patch_cpe_prop.h)
-#include DeviceFamily_constructPath(rf_patches/rf_patch_rfe_genook.h)
-#include DeviceFamily_constructPath(rf_patches/rf_patch_mce_genook.h)
+#include <inc/hw_ccfg.h>
+#include <inc/hw_fcfg1.h>
+#include <rf_patches/rf_patch_cpe_prop.h>
+#include <rf_patches/rf_patch_rfe_genook.h>
+#include <rf_patches/rf_patch_mce_genook.h>
 
 
 // *********************************************************************************

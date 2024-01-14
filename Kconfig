@@ -1,5 +1,5 @@
 mainmenu "CC1352 Demo Application" 
-#
+
 # config BEAGLEPLAY_GREYBUS_MAX_NODES
 #   int "Maximum number of cports supported by AP"
 #   default 1
