@@ -10,11 +10,9 @@
  */
 
 #include "ti_radio_config.h"
-#include <inc/hw_ccfg.h>
-#include <inc/hw_fcfg1.h>
-#include <rf_patches/rf_patch_cpe_prop.h>
-#include <rf_patches/rf_patch_rfe_genook.h>
-#include <rf_patches/rf_patch_mce_genook.h>
+#include DeviceFamily_constructPath(rf_patches/rf_patch_cpe_prop.h)
+#include DeviceFamily_constructPath(rf_patches/rf_patch_rfe_genook.h)
+#include DeviceFamily_constructPath(rf_patches/rf_patch_mce_genook.h)
 
 
 // *********************************************************************************
@@ -81,24 +79,9 @@ RF_TxPowerTable_Entry txPowerTable_2400_pa5[TXPOWERTABLE_2400_PA5_SIZE] =
     RF_TxPowerTable_TERMINATION_ENTRY
 };
 
-// 2400 MHz, 5 + 20 dBm
-RF_TxPowerTable_Entry txPowerTable_2400_pa5_20[TXPOWERTABLE_2400_PA5_20_SIZE] =
+// 2400 MHz, 20 dBm
+RF_TxPowerTable_Entry txPowerTable_2400_pa20[TXPOWERTABLE_2400_PA20_SIZE] =
 {
-    {-20, RF_TxPowerTable_DEFAULT_PA_ENTRY(6, 3, 0, 2) }, // 0x04C6
-    {-18, RF_TxPowerTable_DEFAULT_PA_ENTRY(8, 3, 0, 3) }, // 0x06C8
-    {-15, RF_TxPowerTable_DEFAULT_PA_ENTRY(10, 3, 0, 3) }, // 0x06CA
-    {-12, RF_TxPowerTable_DEFAULT_PA_ENTRY(12, 3, 0, 5) }, // 0x0ACC
-    {-10, RF_TxPowerTable_DEFAULT_PA_ENTRY(15, 3, 0, 5) }, // 0x0ACF
-    {-9, RF_TxPowerTable_DEFAULT_PA_ENTRY(16, 3, 0, 5) }, // 0x0AD0
-    {-6, RF_TxPowerTable_DEFAULT_PA_ENTRY(20, 3, 0, 8) }, // 0x10D4
-    {-5, RF_TxPowerTable_DEFAULT_PA_ENTRY(22, 3, 0, 9) }, // 0x12D6
-    {-3, RF_TxPowerTable_DEFAULT_PA_ENTRY(19, 2, 0, 12) }, // 0x1893
-    {0, RF_TxPowerTable_DEFAULT_PA_ENTRY(19, 1, 0, 20) }, // 0x2853
-    {1, RF_TxPowerTable_DEFAULT_PA_ENTRY(22, 1, 0, 20) }, // 0x2856
-    {2, RF_TxPowerTable_DEFAULT_PA_ENTRY(25, 1, 0, 25) }, // 0x3259
-    {3, RF_TxPowerTable_DEFAULT_PA_ENTRY(29, 1, 0, 28) }, // 0x385D
-    {4, RF_TxPowerTable_DEFAULT_PA_ENTRY(35, 1, 0, 39) }, // 0x4E63
-    {5, RF_TxPowerTable_DEFAULT_PA_ENTRY(23, 0, 0, 57) }, // 0x7217
     {14, RF_TxPowerTable_HIGH_PA_ENTRY(22, 3, 1, 19, 27) }, // 0x1B27D6
     {15, RF_TxPowerTable_HIGH_PA_ENTRY(26, 3, 1, 23, 27) }, // 0x1B2FDA
     {16, RF_TxPowerTable_HIGH_PA_ENTRY(30, 3, 1, 28, 27) }, // 0x1B39DE
@@ -125,12 +108,12 @@ RF_TxPowerTable_Entry txPowerTable_2400_pa5_20[TXPOWERTABLE_2400_PA5_20_SIZE] =
 // Packet Length Config: Variable
 // Max Packet Length: 255
 // Preamble Count: 4 Bytes
-// Preamble Mode: Send 1 as the first preamble bit
+// Preamble Mode: Send 0 as the first preamble bit
 // RX Filter BW (kHz): 38.9
-// Symbol Rate (kBaud): 14.999
+// Symbol Rate (kBaud): 4.800
 // Sync Word: 0x930B51DE
 // Sync Word Length: 32 Bits
-// TX Power (dBm): 5
+// TX Power (dBm): 12.5
 // Whitening: No whitening
 
 // TI-RTOS RF Mode Object

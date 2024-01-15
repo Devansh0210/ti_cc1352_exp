@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
-#include <ti/drivers/GPIO.h>
+// #include <ti/drivers/GPIO.h>
 #include <ti/drivers/rf/RF.h>
 #include <driverlib/rf_prop_mailbox.h>
 
@@ -11,7 +11,9 @@
 
 /* TI Drivers */
 #include <ti/drivers/rf/RF.h>
-#include <ti/drivers/GPIO.h>
+#include <ti/drivers/Power.h>
+#include <ti/drivers/power/PowerCC26X2.h>
+// #include <ti/drivers/GPIO.h>
 //#include <ti/drivers/pin/PINCC26XX.h>
 
 /* Driverlib Header files */
@@ -20,7 +22,7 @@
 /* Board Header files */
 #include "ti_driver_config.h"
 #include <ti_radio_config.h>
-#include <ti/devices/cc13x2_cc26x2/rf_patches/rf_patch_mce_genook.h>
+// #include <ti/devices/cc13x2_cc26x2/rf_patches/rf_patch_mce_genook.h>
 #include "zephyr/sys_clock.h"
 #include <zephyr/kernel.h>
 
@@ -31,11 +33,11 @@
 
 /* Packet TX Configuration */
 #define PAYLOAD_LENGTH      3
-#ifdef POWER_MEASUREMENT
-#define PACKET_INTERVAL     5  /* For power measurement set packet interval to 5s */
-#else
+// #ifdef POWER_MEASUREMENT
+// #define PACKET_INTERVAL     5  /* For power measurement set packet interval to 5s */
+// #else
 #define PACKET_INTERVAL     3000  /* Set packet interval to 500000us or 500ms */
-#endif
+// #endif
 
 /***** Prototypes *****/
 
@@ -58,9 +60,9 @@ void rfThread(void *p1, void* p2, void *p3)
     RF_Params rfParams;
     RF_Params_init(&rfParams);
 
-    GPIO_setConfig(CONFIG_GPIO_GLED, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
-
-    GPIO_write(CONFIG_GPIO_GLED, CONFIG_GPIO_LED_OFF);
+    // GPIO_setConfig(CONFIG_GPIO_GLED, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
+    //
+    // GPIO_write(CONFIG_GPIO_GLED, CONFIG_GPIO_LED_OFF);
 
     RF_cmdPropTx.pktLen = PAYLOAD_LENGTH;
     RF_cmdPropTx.pPkt = packet;
@@ -106,8 +108,9 @@ void rfThread(void *p1, void* p2, void *p3)
                 // RF_flushCmd().
                 break;
             default:
+                break;
                 // Uncaught error event
-                while(1);
+                // while(1);
         }
 
         uint32_t cmdStatus = ((volatile RF_Op*)&RF_cmdPropTx)->status;
@@ -137,40 +140,41 @@ void rfThread(void *p1, void* p2, void *p3)
                 // TX underflow observed during operation
                 break;
             default:
+                break;
                 // Uncaught error event - these could come from the
                 // pool of states defined in rf_mailbox.h
-                while(1);
+                // while(1);
         }
 
-#ifndef POWER_MEASUREMENT
-        GPIO_toggle(CONFIG_GPIO_GLED);
-#endif
+// #ifndef POWER_MEASUREMENT
+//         GPIO_toggle(CONFIG_GPIO_GLED);
+// #endif
         /* Power down the radio */
         RF_yield(rfHandle);
 
-#ifdef POWER_MEASUREMENT
-        /* Sleep for PACKET_INTERVAL s */
-        sleep(PACKET_INTERVAL);
-#else
+// #ifdef POWER_MEASUREMENT
+//         /* Sleep for PACKET_INTERVAL s */
+//         sleep(PACKET_INTERVAL);
+// #else
         /* Sleep for PACKET_INTERVAL us */
         k_msleep(PACKET_INTERVAL);
         printf("Sent Packet");
-#endif
+// #endif
 
     }
 }
 
-// void hello_world_entry(void* p1, void* p2, void* p3) {
-//     ARG_UNUSED(p1);
-//     ARG_UNUSED(p2);
-//     ARG_UNUSED(p3);
-//
-//     while(1) {
-//         k_msleep(2000);
-//         printf("Hello Devansh");
-//     };
+void hello_world_entry(void* p1, void* p2, void* p3) {
+    ARG_UNUSED(p1);
+    ARG_UNUSED(p2);
+    ARG_UNUSED(p3);
+
+    while(1) {
+        k_msleep(2000);
+        printf("Hello Devansh");
+    };
+}
 //     
-// }
 //
 // K_THREAD_DEFINE(hello_world, 1024, hello_world_entry, NULL, NULL, NULL, 6, 0, 0);
 
