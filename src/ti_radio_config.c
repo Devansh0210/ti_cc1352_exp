@@ -134,13 +134,13 @@ RF_TxPowerTable_Entry txPowerTable_2400_pa5_20[TXPOWERTABLE_2400_PA5_20_SIZE] =
 // Whitening: No whitening
 
 // TI-RTOS RF Mode Object
-RF_Mode RF_prop=
-{
-    .rfMode = RF_MODE_AUTO,
-    .cpePatchFxn = &rf_patch_cpe_prop,
-    .mcePatchFxn = &rf_patch_mce_genook,
-    .rfePatchFxn = &rf_patch_rfe_genook
-};
+// RF_Mode RF_prop=
+// {
+//     .rfMode = RF_MODE_AUTO,
+//     .cpePatchFxn = &rf_patch_cpe_prop,
+//     .mcePatchFxn = 0,
+//     .rfePatchFxn = 0 
+// };
 
 // Overrides for CMD_PROP_RADIO_DIV_SETUP_PA
 uint32_t pOverrides[] =
@@ -184,7 +184,7 @@ uint32_t pOverrides[] =
 
 // CMD_PROP_RADIO_DIV_SETUP_PA
 // Proprietary Mode Radio Setup Command for All Frequency Bands
-rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup =
+volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup =
 {
     .commandNo = 0x3807,
     .status = 0x0000,
@@ -226,7 +226,7 @@ rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup =
 
 // CMD_FS
 // Frequency Synthesizer Programming Command
-rfc_CMD_FS_t RF_cmdFs =
+volatile rfc_CMD_FS_t RF_cmdFs =
 {
     .commandNo = 0x0803,
     .status = 0x0000,
@@ -250,7 +250,7 @@ rfc_CMD_FS_t RF_cmdFs =
 
 // CMD_PROP_TX
 // Proprietary Mode Transmit Command
-rfc_CMD_PROP_TX_t RF_cmdPropTx =
+volatile rfc_CMD_PROP_TX_t RF_cmdPropTx =
 {
     .commandNo = 0x3801,
     .status = 0x0000,
@@ -272,7 +272,7 @@ rfc_CMD_PROP_TX_t RF_cmdPropTx =
 
 // CMD_PROP_RX
 // Proprietary Mode Receive Command
-rfc_CMD_PROP_RX_t RF_cmdPropRx =
+volatile rfc_CMD_PROP_RX_t RF_cmdPropRx =
 {
     .commandNo = 0x3802,
     .status = 0x0000,
