@@ -24,29 +24,18 @@
 
 #include <rf_patches/rf_patch_cpe_prop.h>
 
-// #include <ti/drivers/GPIO.h>
-//#include <ti/drivers/pin/PINCC26XX.h>
 
 /* Driverlib Header files */
 #include DeviceFamily_constructPath(driverlib/rf_prop_mailbox.h)
 
-/* Board Header files */
-#include "ti_driver_config.h"
-// #include "ti_radio_config.h"
-// #include <ti/devices/cc13x2_cc26x2/rf_patches/rf_patch_mce_genook.h>
-#include "zephyr/sys_clock.h"
 #include <zephyr/kernel.h>
 
 /***** Defines *****/
 
 /* Do power measurement */
-//#define POWER_MEASUREMENT
 
 /* Packet TX Configuration */
 #define PAYLOAD_LENGTH      3
-// #ifdef POWER_MEASUREMENT
-// #define PACKET_INTERVAL     5  /* For power measurement set packet interval to 5s */
-// #else
 #define PACKET_INTERVAL     3000  /* Set packet interval to 500000us or 500ms */
 // #endif
 
