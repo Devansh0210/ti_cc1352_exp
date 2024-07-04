@@ -6,7 +6,7 @@
     };
 
     ieee802154g {
-        status = "okay";
+        status = "disabled";
     };
 };
 
