@@ -1,3 +1,10 @@
 mainmenu "CC1352 Demo Application" 
 
 source "Kconfig.zephyr"
+
+config PROP_RADIO_CC13XX_CC26XX
+    bool "RF Prop Radio Driver Enable"
+    select PM
+    help
+        "Setup RF Prop Radio in CC13XX/CC26XX"
+

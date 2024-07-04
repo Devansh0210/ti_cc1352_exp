@@ -1,8 +1,6 @@
+#include "ti/drivers/rf/RFCC26X2.h"
 #include <stdio.h>
 #include <zephyr/kernel.h>
-// #include <ti/drivers/GPIO.h>
-#include <ti/drivers/rf/RF.h>
-#include <driverlib/rf_prop_mailbox.h>
 
 /***** Includes *****/
 /* Standard C Libraries */
@@ -16,20 +14,19 @@
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC26X2.h>
 
+#include <ti/drivers/rf/RF.h>
 #include <driverlib/rf_mailbox.h>
 #include <driverlib/rf_prop_mailbox.h>
 #include <driverlib/rfc.h>
-#include <rf_patches/rf_patch_cpe_multi_protocol.h>
-#include <ti/drivers/rf/RF.h>
-
+#include <driverlib/rf_common_cmd.h>
+#include <driverlib/rf_data_entry.h>
+#include <driverlib/rf_prop_cmd.h>
 #include <rf_patches/rf_patch_cpe_prop.h>
 
 
-/* Driverlib Header files */
-#include DeviceFamily_constructPath(driverlib/rf_prop_mailbox.h)
-
 #include <zephyr/kernel.h>
 
+#include "ti_radio_config.h"
 /***** Defines *****/
 
 /* Do power measurement */
@@ -46,7 +43,7 @@ static RF_Object rfObject;
 static RF_Handle rfHandle;
 
 static uint8_t packet[PAYLOAD_LENGTH];
-RF_Mode RF_prop=
+static RF_Mode RF_prop=
 {
     .rfMode = RF_MODE_AUTO,
     .cpePatchFxn = &rf_patch_cpe_prop,
@@ -54,7 +51,7 @@ RF_Mode RF_prop=
     .rfePatchFxn = 0 
 };
 
-uint32_t pOverrides[] =
+static uint32_t pOverrides[] =
 {
     // override_tc597.json
     // PHY: Use MCE RAM patch (mode 0), RFE RAM patch (mode 0)
@@ -92,7 +89,7 @@ uint32_t pOverrides[] =
 };
 
 // Overrides for CMD_PROP_RADIO_DIV_SETUP_PA
-uint32_t pOverridesTxStd[] =
+static uint32_t pOverridesTxStd[] =
 {
     // override_txstd_placeholder.json
     // TX Standard power override
@@ -108,7 +105,7 @@ uint32_t pOverridesTxStd[] =
 };
 
 // Overrides for CMD_PROP_RADIO_DIV_SETUP_PA
-uint32_t pOverridesTx20[] =
+static uint32_t pOverridesTx20[] =
 {
     // override_tx20_placeholder.json
     // TX HighPA power override
@@ -125,7 +122,7 @@ uint32_t pOverridesTx20[] =
 
 // CMD_PROP_RADIO_DIV_SETUP_PA
 // Proprietary Mode Radio Setup Command for All Frequency Bands
-rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup =
+static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup =
 {
     .commandNo = 0x3807,
     .status = 0x0000,
@@ -166,7 +163,7 @@ rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup =
 };
 
 
-rfc_CMD_PROP_TX_t RF_cmdPropTx =
+static volatile rfc_CMD_PROP_TX_t RF_cmdPropTx =
 {
     .commandNo = 0x3801,
     .status = 0x0000,
@@ -186,12 +183,32 @@ rfc_CMD_PROP_TX_t RF_cmdPropTx =
     .pPkt = 0
 };
 
-
+static volatile rfc_CMD_FS_t RF_cmdFs =
+{
+    .commandNo = 0x0803,
+    .status = 0x0000,
+    .pNextOp = 0,
+    .startTime = 0x00000000,
+    .startTrigger.triggerType = 0x0,
+    .startTrigger.bEnaCmd = 0x0,
+    .startTrigger.triggerNo = 0x0,
+    .startTrigger.pastTrig = 0x0,
+    .condition.rule = 0x1,
+    .condition.nSkip = 0x0,
+    .frequency = 0x0364,
+    .fractFreq = 0x0000,
+    .synthConf.bTxMode = 0x0,
+    .synthConf.refFreq = 0x0,
+    .__dummy0 = 0x00,
+    .__dummy1 = 0x00,
+    .__dummy2 = 0x00,
+    .__dummy3 = 0x0000
+};
 // static uint16_t seqNumber;
 
 /***** Function definitions *****/
 
-void rfThread(void *p1, void* p2, void *p3)
+static int rfThread(void *p1, void* p2, void *p3)
 {
     ARG_UNUSED(p1);
     ARG_UNUSED(p2);
@@ -206,100 +223,110 @@ void rfThread(void *p1, void* p2, void *p3)
     RF_cmdPropTx.pPkt = packet;
     RF_cmdPropTx.startTrigger.triggerType = TRIG_NOW;
 
+    /* ------ Failing Here ------- */
     /* Request access to the radio */
     rfHandle = RF_open(&rfObject, &RF_prop, (RF_RadioSetup*)&RF_cmdPropRadioDivSetup, &rfParams);
+    if (rfHandle == NULL){
+        printf("Error in opening handle\n");
+    }
     printf("PropSetupDone\n");
 
     // /* Set the frequency */
-    // RF_postCmd(rfHandle, (RF_Op*)&RF_cmdFs, RF_PriorityNormal, NULL, 0);
-    // printf("CmdFs done\n");
+	RF_cmdFs.status = IDLE;
+	RF_cmdFs.pNextOp = NULL;
+	RF_cmdFs.condition.rule = COND_NEVER;
+	RF_cmdFs.synthConf.bTxMode = false;
+	// RF_cmdFs.frequency = 0;
+	// RF_cmdFs.fractFreq = 0;
+    
+    RF_runCmd(rfHandle, (RF_Op*)&RF_cmdFs, RF_PriorityNormal, NULL, 0);
+    printf("CmdFs done %x\n", RF_cmdFs.status);
 
     while(1)
     {
         /* Create packet with incrementing sequence number and random payload */
         
         printf("Sending Packet\n");
-//         packet[0] = (uint8_t)68;
-//         packet[1] = (uint8_t)101;
-//         packet[2] = (uint8_t)118;
-//
-//         /* Send packet */
-//         RF_EventMask terminationReason = RF_runCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
-//                                                    RF_PriorityNormal, NULL, 0);
-//
-//         switch(terminationReason)
-//         {
-//             case RF_EventLastCmdDone:
-//                 // A stand-alone radio operation command or the last radio
-//                 // operation command in a chain finished.
-//                 break;
-//             case RF_EventCmdCancelled:
-//                 // Command cancelled before it was started; it can be caused
-//             // by RF_cancelCmd() or RF_flushCmd().
-//                 break;
-//             case RF_EventCmdAborted:
-//                 // Abrupt command termination caused by RF_cancelCmd() or
-//                 // RF_flushCmd().
-//                 break;
-//             case RF_EventCmdStopped:
-//                 // Graceful command termination caused by RF_cancelCmd() or
-//                 // RF_flushCmd().
-//                 break;
-//             default:
-//                 break;
-//                 // Uncaught error event
-//                 // while(1);
-//         }
-//
-//         uint32_t cmdStatus = ((volatile RF_Op*)&RF_cmdPropTx)->status;
-//         switch(cmdStatus)
-//         {
-//             case PROP_DONE_OK:
-//                 // Packet transmitted successfully
-//                 break;
-//             case PROP_DONE_STOPPED:
-//                 // received CMD_STOP while transmitting packet and finished
-//                 // transmitting packet
-//                 break;
-//             case PROP_DONE_ABORT:
-//                 // Received CMD_ABORT while transmitting packet
-//                 break;
-//             case PROP_ERROR_PAR:
-//                 // Observed illegal parameter
-//                 break;
-//             case PROP_ERROR_NO_SETUP:
-//                 // Command sent without setting up the radio in a supported
-//                 // mode using CMD_PROP_RADIO_SETUP or CMD_RADIO_SETUP
-//                 break;
-//             case PROP_ERROR_NO_FS:
-//                 // Command sent without the synthesizer being programmed
-//                 break;
-//             case PROP_ERROR_TXUNF:
-//                 // TX underflow observed during operation
-//                 break;
-//             default:
-//                 break;
-//                 // Uncaught error event - these could come from the
-//                 // pool of states defined in rf_mailbox.h
-//                 // while(1);
-//         }
-//
-// // #ifndef POWER_MEASUREMENT
-// //         GPIO_toggle(CONFIG_GPIO_GLED);
-// // #endif
-//         /* Power down the radio */
-//         RF_yield(rfHandle);
-//
-// #ifdef POWER_MEASUREMENT
-//         /* Sleep for PACKET_INTERVAL s */
-//         sleep(PACKET_INTERVAL);
-// #else
-        /* Sleep for PACKET_INTERVAL us */
+        packet[0] = (uint8_t)68;
+        packet[1] = (uint8_t)101;
+        packet[2] = (uint8_t)118;
+
+
+        RF_EventMask terminationReason = RF_EventCmdAborted | RF_EventCmdPreempted;
+        while(( terminationReason & RF_EventCmdAborted ) && ( terminationReason & RF_EventCmdPreempted ))
+        {
+            // Re-run if command was aborted due to SW TCXO compensation
+            terminationReason = RF_runCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
+                                          RF_PriorityNormal, NULL, 0);
+            printf("Rerunning Command");
+        }
+
+        printf("Sent Packet _ 1\n");
+        switch(terminationReason)
+        {
+            case RF_EventLastCmdDone:
+                // A stand-alone radio operation command or the last radio
+                // operation command in a chain finished.
+                break;
+            case RF_EventCmdCancelled:
+                // Command cancelled before it was started; it can be caused
+            // by RF_cancelCmd() or RF_flushCmd().
+                break;
+            case RF_EventCmdAborted:
+                // Abrupt command termination caused by RF_cancelCmd() or
+                // RF_flushCmd().
+                break;
+            case RF_EventCmdStopped:
+                // Graceful command termination caused by RF_cancelCmd() or
+                // RF_flushCmd().
+                break;
+            default:
+                break;
+                // Uncaught error event
+                // while(1);
+        }
+
+        uint32_t cmdStatus = ((volatile RF_Op*)&RF_cmdPropTx)->status;
+        switch(cmdStatus)
+        {
+            case PROP_DONE_OK:
+                // Packet transmitted successfully
+                break;
+            case PROP_DONE_STOPPED:
+                // received CMD_STOP while transmitting packet and finished
+                // transmitting packet
+                break;
+            case PROP_DONE_ABORT:
+                // Received CMD_ABORT while transmitting packet
+                break;
+            case PROP_ERROR_PAR:
+                // Observed illegal parameter
+                break;
+            case PROP_ERROR_NO_SETUP:
+                // Command sent without setting up the radio in a supported
+                // mode using CMD_PROP_RADIO_SETUP or CMD_RADIO_SETUP
+                break;
+            case PROP_ERROR_NO_FS:
+                // Command sent without the synthesizer being programmed
+                break;
+            case PROP_ERROR_TXUNF:
+                // TX underflow observed during operation
+                break;
+            default:
+                break;
+                // Uncaught error event - these could come from the
+                // pool of states defined in rf_mailbox.h
+                // while(1);
+        }
+
+        RF_yield(rfHandle);
+
         k_msleep(PACKET_INTERVAL);
-        printf("Sent Packet");
-// #endif
+        printf("Sent Packet\n");
 
     }
+
+    return 0;
 }
 
 // K_THREAD_DEFINE(rf_thread, 2048, rfThread, NULL, NULL, NULL, 2, 0, 0);
@@ -308,6 +335,12 @@ int main(void)
 {
 
     // k_msleep(10000);
+    /* Enable Floating Point Corprocessor */
+    /* __asm("    ldr.w   r0, =0xE000ED88\n"
+      "    ldr     r1, [r0]\n"
+      "    orr     r1, r1, #(0xF << 20)\n"
+      "    str     r1, [r0]\n"); */
+
     rfThread(NULL, NULL, NULL);
     k_sleep(K_FOREVER);
     return 0;

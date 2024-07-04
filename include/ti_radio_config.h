@@ -17,6 +17,10 @@
 #include <driverlib/rf_prop_cmd.h>
 #include <ti/drivers/rf/RF.h>
 
+#include <driverlib/rf_data_entry.h>
+#include <driverlib/rf_mailbox.h>
+
+
 
 /* SmartRF Studio version that the RF data is fetched from */
 #define SMARTRF_STUDIO_VERSION "2.29.0"
@@ -45,6 +49,11 @@
 #define TXPOWERTABLE_2400_PA5_SIZE 16 // 2400 MHz, 5 dBm
 #define TXPOWERTABLE_2400_PA5_20_SIZE 23 // 2400 MHz, 5 + 20 dBm
 
+#define CC13XX_CC26XX_RAT_CYCLES_PER_SECOND 4000000
+
+#define CC13XX_CC26XX_CPE0_IRQ (INT_RFC_CPE_0 - 16)
+#define CC13XX_CC26XX_CPE1_IRQ (INT_RFC_CPE_1 - 16)
+
 // TX power tables
 extern RF_TxPowerTable_Entry txPowerTable_868_pa13[]; // 868 MHz, 13 dBm
 extern RF_TxPowerTable_Entry txPowerTable_2400_pa5[]; // 2400 MHz, 5 dBm
@@ -69,9 +78,9 @@ extern RF_TxPowerTable_Entry txPowerTable_2400_pa5_20[]; // 2400 MHz, 5 + 20 dBm
 
 // RF Core API commands
 // extern volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup;
-extern volatile rfc_CMD_FS_t RF_cmdFs;
-extern volatile rfc_CMD_PROP_TX_t RF_cmdPropTx;
-extern volatile rfc_CMD_PROP_RX_t RF_cmdPropRx;
+// extern volatile rfc_CMD_FS_t RF_cmdFs;
+// extern volatile rfc_CMD_PROP_TX_t RF_cmdPropTx;
+// extern volatile rfc_CMD_PROP_RX_t RF_cmdPropRx;
 
 // RF Core API overrides
 // extern uint32_t pOverrides[];
