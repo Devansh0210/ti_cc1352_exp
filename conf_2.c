@@ -1,61 +1,17 @@
-#include "ti/drivers/rf/RFCC26X2.h"
-#include "zephyr/sys/printk.h"
-#include <stdbool.h>
-#include <stdio.h>
-#include <zephyr/kernel.h>
-
-/***** Includes *****/
-/* Standard C Libraries */
-#include <stdlib.h>
-#include <unistd.h>
-
-/* TI Drivers */
-#include <inc/hw_ccfg.h>
-#include <inc/hw_fcfg1.h>
-
-#include <ti/drivers/Power.h>
-#include <ti/drivers/power/PowerCC26X2.h>
-
-#include <ti/drivers/rf/RF.h>
-#include <driverlib/rf_mailbox.h>
-#include <driverlib/rf_prop_mailbox.h>
-#include <driverlib/rfc.h>
-#include <driverlib/rf_common_cmd.h>
-#include <driverlib/rf_data_entry.h>
-#include <driverlib/rf_prop_cmd.h>
-#include <rf_patches/rf_patch_cpe_prop.h>
-#include <rf_patches/rf_patch_cpe_multi_protocol.h>
-#include <zephyr/logging/log.h>
-
-LOG_MODULE_REGISTER(main_func);
-
-
-#include <zephyr/kernel.h>
+/*
+ *  ======== ti_radio_config.c ========
+ *  Configured RadioConfig module definitions
+ *
+ *  DO NOT EDIT - This file is generated for the CC1352P7RGZ
+ *  by the SysConfig tool.
+ *
+ *  Radio Config module version : 1.18.0
+ *  SmartRF Studio data version : 2.31.0
+ */
 
 #include "ti_radio_config.h"
-/***** Defines *****/
+#include DeviceFamily_constructPath(rf_patches/rf_patch_cpe_prop.h)
 
-/* Do power measurement */
-
-/* Packet TX Configuration */
-#define PAYLOAD_LENGTH      30
-#define PACKET_INTERVAL     500000/* Set packet interval to 500000us or 500ms */
-// #endif
-
-/***** Prototypes *****/
-
-/***** Variable declarations *****/
-static RF_Object rfObject;
-static RF_Handle rfHandle;
-
-static uint8_t packet[PAYLOAD_LENGTH];
-static RF_Mode RF_prop=
-{
-    .rfMode = RF_MODE_MULTIPLE,
-    .cpePatchFxn = &rf_patch_cpe_multi_protocol,
-    .mcePatchFxn = 0,
-    .rfePatchFxn = 0 
-};
 
 // *********************************************************************************
 //   RF Frontend configuration
@@ -173,6 +129,14 @@ RF_TxPowerTable_Entry txPowerTable_2400_pa5[TXPOWERTABLE_2400_PA5_SIZE] =
 // TX Power (dBm): 20
 // Whitening: No whitening
 
+// TI-RTOS RF Mode Object
+RF_Mode RF_prop =
+{
+    .rfMode = RF_MODE_AUTO,
+    .cpePatchFxn = &rf_patch_cpe_prop,
+    .mcePatchFxn = 0,
+    .rfePatchFxn = 0
+};
 
 // Overrides for CMD_PROP_RADIO_DIV_SETUP_PA
 uint32_t pOverrides[] =
@@ -264,7 +228,7 @@ rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t RF_cmdPropRadioDivSetup =
     .config.analogCfgMode = 0x0,
     .config.bNoFsPowerUp = 0x0,
     .config.bSynthNarrowBand = 0x0,
-    .txPower = 0x013F,
+    .txPower = 0xFFFF,
     .pRegOverride = pOverrides,
     .centerFreq = 0x0364,
     .intFreq = 0x8000,
@@ -363,148 +327,3 @@ rfc_CMD_PROP_RX_t RF_cmdPropRx =
 
 
 
-static uint16_t seqNumber;
-
-/***** Function definitions *****/
-static void client_error_callback(RF_Handle h, RF_CmdHandle ch,
-	RF_EventMask e)
-{
-	ARG_UNUSED(h);
-	ARG_UNUSED(ch);
-	LOG_INF("client error: 0x%" PRIx64, e);
-}
-
-static void client_event_callback(RF_Handle h, RF_ClientEvent event,
-	void *arg)
-{
-	ARG_UNUSED(h);
-	LOG_INF("event: %d arg: %p", event, arg);
-}
-
-static int rfThread(void *p1, void* p2, void *p3)
-{
-    ARG_UNUSED(p1);
-    ARG_UNUSED(p2);
-    ARG_UNUSED(p3);
-
-
-       RF_Params rfParams;
-        RF_Params_init(&rfParams);
-
-
-    RF_cmdPropTx.pktLen = PAYLOAD_LENGTH;
-    RF_cmdPropTx.pPkt = packet;
-    RF_cmdPropTx.startTrigger.triggerType = TRIG_NOW;
-
-    /* Request access to the radio */
-    rfHandle = RF_open(&rfObject, &RF_prop, (RF_RadioSetup*)&RF_cmdPropRadioDivSetup, &rfParams);
-
-    /* Set the frequency */
-    RF_runCmd(rfHandle, (RF_Op*)&RF_cmdFs, RF_PriorityNormal, NULL, 0);
-    printk("CMD_FS successful\n");
-
-    while(1)
-    {
-        /* Create packet with incrementing sequence number and random payload */
-        packet[0] = (uint8_t)(seqNumber >> 8);
-        packet[1] = (uint8_t)(seqNumber++);
-        uint8_t i;
-        for (i = 2; i < PAYLOAD_LENGTH; i++)
-        {
-            packet[i] = rand();
-        }
-
-        /* Send packet */
-        RF_EventMask terminationReason = RF_EventCmdAborted | RF_EventCmdPreempted;
-        while(( terminationReason & RF_EventCmdAborted ) && ( terminationReason & RF_EventCmdPreempted ))
-        {
-            // Re-run if command was aborted due to SW TCXO compensation
-            terminationReason = RF_runCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
-                                          RF_PriorityNormal, NULL, 0);
-        }
-
-        switch(terminationReason)
-        {
-            case RF_EventLastCmdDone:
-                // A stand-alone radio operation command or the last radio
-                // operation command in a chain finished.
-                break;
-            case RF_EventCmdCancelled:
-                // Command cancelled before it was started; it can be caused
-            // by RF_cancelCmd() or RF_flushCmd().
-                break;
-            case RF_EventCmdAborted:
-                // Abrupt command termination caused by RF_cancelCmd() or
-                // RF_flushCmd().
-                break;
-            case RF_EventCmdStopped:
-                // Graceful command termination caused by RF_cancelCmd() or
-                // RF_flushCmd().
-                break;
-            default:
-                // Uncaught error event
-                while(1);
-        }
-
-        uint32_t cmdStatus = ((volatile RF_Op*)&RF_cmdPropTx)->status;
-        switch(cmdStatus)
-        {
-            case PROP_DONE_OK:
-                // Packet transmitted successfully
-                break;
-            case PROP_DONE_STOPPED:
-                // received CMD_STOP while transmitting packet and finished
-                // transmitting packet
-                break;
-            case PROP_DONE_ABORT:
-                // Received CMD_ABORT while transmitting packet
-                break;
-            case PROP_ERROR_PAR:
-                // Observed illegal parameter
-                break;
-            case PROP_ERROR_NO_SETUP:
-                // Command sent without setting up the radio in a supported
-                // mode using CMD_PROP_RADIO_SETUP or CMD_RADIO_SETUP
-                break;
-            case PROP_ERROR_NO_FS:
-                // Command sent without the synthesizer being programmed
-                break;
-            case PROP_ERROR_TXUNF:
-                // TX underflow observed during operation
-                break;
-            default:
-                // Uncaught error event - these could come from the
-                // pool of states defined in rf_mailbox.h
-                while(1);
-        }
-
-        /* Power down the radio */
-        RF_yield(rfHandle);
-
-        /* Sleep for PACKET_INTERVAL us */
-        k_usleep(PACKET_INTERVAL);
-        printk("Sent Packet\n");
-
-    }
-
-    return 0;
-}
-
-// K_THREAD_DEFINE(rf_thread, 2048, rfThread, NULL, NULL, NULL, 2, 0, 0);
-
-int main(void)
-{
-
-    // k_msleep(10000);
-    /* Enable Floating Point Corprocessor */
-    /* __asm("    ldr.w   r0, =0xE000ED88\n"
-      "    ldr     r1, [r0]\n"
-      "    orr     r1, r1, #(0xF << 20)\n"
-      "    str     r1, [r0]\n"); */
-
-    LOG_INF("hello");
-    // printf("%d \n", RFCC26XX_hwAttrs.hwiPriority);
-    rfThread(NULL, NULL, NULL);
-    while(1);
-    return 0;
-}

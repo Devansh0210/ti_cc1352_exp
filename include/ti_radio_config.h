@@ -45,9 +45,9 @@
 #define SUPPORT_FREQBAND_2400
 
 // TX power table size definitions
-#define TXPOWERTABLE_868_PA13_SIZE 22 // 868 MHz, 13 dBm
+#define TXPOWERTABLE_868_PA13_SIZE 20 // 868 MHz, 13 dBm
+#define TXPOWERTABLE_868_PA13_20_SIZE 25 // 868 MHz, 13 + 20 dBm
 #define TXPOWERTABLE_2400_PA5_SIZE 16 // 2400 MHz, 5 dBm
-#define TXPOWERTABLE_2400_PA5_20_SIZE 23 // 2400 MHz, 5 + 20 dBm
 
 #define CC13XX_CC26XX_RAT_CYCLES_PER_SECOND 4000000
 
@@ -55,9 +55,9 @@
 #define CC13XX_CC26XX_CPE1_IRQ (INT_RFC_CPE_1 - 16)
 
 // TX power tables
-extern RF_TxPowerTable_Entry txPowerTable_868_pa13[]; // 868 MHz, 13 dBm
-extern RF_TxPowerTable_Entry txPowerTable_2400_pa5[]; // 2400 MHz, 5 dBm
-extern RF_TxPowerTable_Entry txPowerTable_2400_pa5_20[]; // 2400 MHz, 5 + 20 dBm
+// extern RF_TxPowerTable_Entry txPowerTable_868_pa13[]; // 868 MHz, 13 dBm
+// extern RF_TxPowerTable_Entry txPowerTable_2400_pa5[]; // 2400 MHz, 5 dBm
+// extern RF_TxPowerTable_Entry txPowerTable_2400_pa5_20[]; // 2400 MHz, 5 + 20 dBm
 
 
 
